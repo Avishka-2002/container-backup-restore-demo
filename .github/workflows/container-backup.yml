@@ -1,0 +1,42 @@
+name: Container Backup & Restore
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-backup-restore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t demo-app:latest .
+
+      - name: Save Docker image to tar
+        run: docker save demo-app:latest -o demo-app.tar
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-backup
+          path: demo-app.tar
+          retention-days: 30
+
+      # Key DR Step: Remove the local image cache to prove restore works!
+      - name: Simulate Image Loss (Remove local image cache)
+        run: |
+          docker rmi -f demo-app:latest
+          docker images | grep demo-app || echo "✅ Local cache cleared successfully. Image removed."
+
+      - name: Restore Docker image
+        run: docker load -i demo-app.tar
+
+      - name: Run container test & Health Check
+        run: |
+          docker run -d -p 8080:80 --name test-container demo-app:latest
+          sleep 3
+          docker ps | grep test-container
+          curl -f http://localhost:8080 | grep "Container Successfully Restored"
+          echo "✅ Restore verification passed: Container is running and serving traffic correctly!"
