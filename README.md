@@ -55,3 +55,54 @@ git branch -M main
 git remote add origin https://github.com/Avishka-2002/container-backup-restore-demo.git
 git push -u origin main
 ```
+
+---
+
+## 💻 How to Run This Project Locally on Your PC (Windows PowerShell)
+
+If you have **Docker Desktop** installed on your Windows PC, you can run the exact same lifecycle and test disaster recovery right on your machine:
+
+### Step 1: Open PowerShell and navigate to the project
+```powershell
+cd "C:\Users\EXT\OneDrive\Desktop\Week 12\container-backup-restore-demo"
+```
+
+### Step 2: Build the Docker image
+```powershell
+docker build -t demo-app:latest .
+```
+> **Sinhala Note:** අපගේ `index.html` එක සහ Nginx භාවිතා කර `demo-app:latest` නම් container image එක build කරයි.
+
+### Step 3: Backup — Export the image to a `.tar` archive
+```powershell
+docker save demo-app:latest -o demo-app.tar
+```
+> **Sinhala Note:** `demo-app.tar` ලෙස backup file එකක් project folder එකේ නිර්මාණය වේ.
+
+### Step 4: Simulate Disaster — Remove the image from your local Docker cache
+```powershell
+docker rmi -f demo-app:latest
+```
+> **Sinhala Note:** Backup එකෙන් restore වෙන බව confirm කිරීමට, දැනට build කරපු local image එක delete කරමු.
+
+### Step 5: Restore — Load the image back from the `.tar` archive
+```powershell
+docker load -i demo-app.tar
+```
+> **Sinhala Note:** `docker load` මඟින් අපගේ `demo-app.tar` backup file එක නැවත Docker වෙත restore කරයි.
+
+### Step 6: Run & Verify the restored container
+```powershell
+# Start the container in background on port 8080
+docker run -d -p 8080:80 --name local-demo-app demo-app:latest
+
+# Open in your web browser or test via curl
+curl http://localhost:8080
+```
+Then open your browser and go to **`http://localhost:8080`** — you will see the `"✅ Container Successfully Restored!"` web page!
+
+### Step 7: Clean up local container (when finished testing)
+```powershell
+docker rm -f local-demo-app
+```
+
